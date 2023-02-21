@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -92,7 +93,29 @@ func main() {
 	}
 	wg.Wait()
 
-	// fmt.Printf("%T", data[0][0])
-
 	writeToCSV(FQDN)
+
+	http.HandleFunc("/c12", func(w http.ResponseWriter, r *http.Request) {
+		file, err := os.Open("C:/Users/ranusu737/Desktop/J Project/challenge-get-my-ip/sampleop.csv")
+		checkError(err)
+		defer file.Close()
+
+		csvReader := csv.NewReader(file)
+		data, err := csvReader.ReadAll()
+		checkError(err)
+
+		writer := csv.NewWriter(w)
+
+		// Write the data to the CSV file
+		for _, value := range data {
+			err := writer.Write(value)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		writer.Flush()
+	})
+
+	http.ListenAndServe(":8090", nil)
 }
