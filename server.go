@@ -9,14 +9,11 @@ import (
 	"sync"
 )
 
-// <-----------------------------------Golbals------------------------------------------------->
-
 var path string = "C:/Users/ranusu737/Desktop/J Project/challenge-get-my-ip/input_fqdn.csv"
 var FQDN [][]string
+
 var wg sync.WaitGroup
 var mut sync.RWMutex
-
-// <------------------------------------------------------------------------------------------->
 
 func checkError(e error) {
 	if e != nil {
@@ -24,17 +21,9 @@ func checkError(e error) {
 	}
 }
 
-// func checkIPError(e error) {
-// 	if e != nil {
-// 		fmt.Printf("Could not get IP: %v\n", e)
-// 	}
-// }
-
 func isIPv4(s string) bool {
 	return strings.Count(s, ":") < 2
 }
-
-// <------------------------------------------------------------------------------------------->
 
 func writeToCSV(a [][]string) {
 	f, err := os.Create("C:/Users/ranusu737/Desktop/J Project/challenge-get-my-ip/sampleop.csv")
@@ -46,32 +35,21 @@ func writeToCSV(a [][]string) {
 
 }
 
-func wToCSV(v []string){
+func lookupIP(ch chan string) {
 	defer wg.Done()
-	f, err := os.Create("C:/Users/ranusu737/Desktop/J Project/challenge-get-my-ip/sampleop.csv")
-	checkError(err)
-	mut.Lock()
-	newWriter := csv.NewWriter(f)
-	mut.Unlock()
-	err = newWriter.Write(v)
-	checkError(err)
-}
-
-func lookup_IP(v []string) {
-	defer wg.Done()
-	if v[0] == "FQDN" {
-		return
-	}
-
+	v := <-ch
+	// n := <-nch
 	var fl []string
-	fl = append(fl, v[0])
+	// fl = append(fl, n)
+	fl = append(fl, v)
 
-	ip, err := net.LookupHost(v[0])
+	ip, err := net.LookupHost(v)
 	if err != nil {
-		// mut.Lock()
+		mut.RLock()
+
 		fl = append(fl, err.Error())
 		FQDN = append(FQDN, fl)
-		// mut.Unlock()
+		mut.RUnlock()
 		return
 	}
 
@@ -80,10 +58,10 @@ func lookup_IP(v []string) {
 			ip[0] = i
 		}
 	}
-	// mut.Lock()
+	mut.RLock()
 	fl = append(fl, ip[0])
 	FQDN = append(FQDN, fl)
-	// mut.Unlock()
+	mut.RUnlock()
 }
 
 func main() {
@@ -98,20 +76,23 @@ func main() {
 
 	csvReader := csv.NewReader(file)
 	data, err := csvReader.ReadAll()
-	// fmt.Print(data)
+	checkError(err)
+
+	ch := make(chan string, len(data))
+	// nch := make(chan string, len(data))
+
 	for _, v := range data {
-
+		if v[0] == "FQDN" {
+			continue
+		}
 		wg.Add(1)
-		lookup_IP(v)
-
+		ch <- v[0]
+		// nch <- v[0]
+		go lookupIP(ch)
 	}
-	fmt.Println(FQDN)
 	wg.Wait()
 
+	// fmt.Printf("%T", data[0][0])
+
 	writeToCSV(FQDN)
-	// for _,v:=range FQDN{
-	// 	wg.Add(1)
-	// 	go wToCSV(v)
-	// }
-	// wg.Wait()
 }
