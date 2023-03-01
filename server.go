@@ -36,6 +36,10 @@ func writeToCSV(a [][]string) {
 
 }
 
+// func regexp_IPv4(s string){
+// 	regexp.MatchString("[0-255]:[0-255]:")
+// }
+
 func lookupIP(ch chan string) {
 	defer wg.Done()
 	v := <-ch
@@ -47,8 +51,7 @@ func lookupIP(ch chan string) {
 	ip, err := net.LookupHost(v)
 	if err != nil {
 		mut.RLock()
-
-		fl = append(fl, err.Error())
+		fl = append(fl, "Invalid domain.")
 		FQDN = append(FQDN, fl)
 		mut.RUnlock()
 		return
@@ -57,6 +60,7 @@ func lookupIP(ch chan string) {
 	for _, i := range ip {
 		if isIPv4(i) {
 			ip[0] = i
+			break
 		}
 	}
 	mut.RLock()
@@ -67,6 +71,7 @@ func lookupIP(ch chan string) {
 
 func main() {
 	// Your Code Goes here !!
+	// var f_data []string
 
 	file, err := os.Open(path)
 	checkError(err)
@@ -82,12 +87,27 @@ func main() {
 	ch := make(chan string, len(data))
 	// nch := make(chan string, len(data))
 
-	for _, v := range data {
-		if v[0] == "FQDN" {
+	keys := make(map[string]bool)
+	list := []string{}
+
+	// If the key(values of the slice) is not equal
+	// to the already present value in new slice (list)
+	// then we append it. else we jump on another element.
+	for _, entry := range data {
+		if _, value := keys[entry[0]]; !value {
+			keys[entry[0]] = true
+			list = append(list, entry[0])
+		}
+	}
+	fmt.Printf("Unique domains:%v", len(list))
+	fmt.Println(list)
+
+	for _, v := range list {
+		if v == "FQDN" {
 			continue
 		}
 		wg.Add(1)
-		ch <- v[0]
+		ch <- v
 		// nch <- v[0]
 		go lookupIP(ch)
 	}
