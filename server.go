@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-var path string = "C:/Users/ranusu737/Desktop/J Project/challenge-get-my-ip/input_fqdn.csv"
+var path string = "challenge-get-my-ip/input_fqdn.csv"
 var FQDN [][]string
 
 var wg sync.WaitGroup
@@ -29,7 +29,7 @@ func regex_isIPv4(s string) bool {
 }
 
 func writeToCSV(a [][]string) {
-	f, err := os.Create("C:/Users/ranusu737/Desktop/J Project/challenge-get-my-ip/sampleop.csv")
+	f, err := os.Create("challenge-get-my-ip/sampleop.csv")
 	checkError(err)
 
 	newWriter := csv.NewWriter(f)
@@ -101,7 +101,7 @@ func main() {
 			list = append(list, entry[0])
 		}
 	}
-	fmt.Printf("Unique domains:%v", len(list))
+	fmt.Printf("Unique domains:%v", len(list)-1)
 	fmt.Println(list)
 
 	for _, v := range list {
@@ -118,7 +118,7 @@ func main() {
 	writeToCSV(FQDN)
 
 	http.HandleFunc("/c12", func(w http.ResponseWriter, r *http.Request) {
-		file, err := os.Open("C:/Users/ranusu737/Desktop/J Project/challenge-get-my-ip/sampleop.csv")
+		file, err := os.Open("challenge-get-my-ip/sampleop.csv")
 		checkError(err)
 		defer file.Close()
 
