@@ -6,7 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
+	"regexp"
 	"sync"
 )
 
@@ -22,8 +22,10 @@ func checkError(e error) {
 	}
 }
 
-func isIPv4(s string) bool {
-	return strings.Count(s, ":") < 2
+func regex_isIPv4(s string) bool {
+	c, err := regexp.MatchString(`^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`, s)
+	checkError(err)
+	return c
 }
 
 func writeToCSV(a [][]string) {
@@ -58,7 +60,7 @@ func lookupIP(ch chan string) {
 	}
 
 	for _, i := range ip {
-		if isIPv4(i) {
+		if regex_isIPv4(i) {
 			ip[0] = i
 			break
 		}
